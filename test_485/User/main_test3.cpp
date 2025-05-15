@@ -188,9 +188,9 @@ int main(void)
     lcd_show_string(30,  50, 200, 16, 16, "STM32", RED);
     lcd_show_string(30,  70, 200, 16, 16, "RS485 TEST", RED);
     lcd_show_string(30,  90, 200, 16, 16, "ATOM@ALIENTEK", RED);
-    lcd_show_string(30, 110, 200, 16, 16, "KEY0:Send", RED);    
+    lcd_show_string(30, 110, 200, 16, 16, "KEY0:Send", RED);
 
-    lcd_show_string(30, 130, 200, 16, 16, "Count:", RED);  
+    lcd_show_string(30, 130, 200, 16, 16, "Count:", RED);
     lcd_show_string(30, 150, 200, 16, 16, "Send Data:", RED);
     lcd_show_string(30, 190, 200, 16, 16, "Receive Data:", RED);
 
