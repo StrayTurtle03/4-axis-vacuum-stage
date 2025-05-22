@@ -422,7 +422,7 @@ void process_move_set_1(void) {
 
 void process_move_set_2(void) {
     uint32_t now = HAL_GetTick();
-    switch (move1_state) {
+    switch (move2_state) {
         case MS2_IDLE:
             // Idle - waiting for trigger
             break;
@@ -479,7 +479,7 @@ void process_move_set_2(void) {
             motorStartTick[1] = HAL_GetTick();
             motorMoving[1]    = true;
             delay_ms(10);
-            motor[2].tgt_position(30, 10);
+            motor[2].tgt_position(50, 5);
             motorStartTick[2] = HAL_GetTick();
             motorMoving[2]    = true;
             delay_ms(10);
@@ -519,7 +519,7 @@ void process_move_set_2(void) {
             motorStartTick[1] = HAL_GetTick();
             motorMoving[1]    = true;
             delay_ms(10);
-            motor[2].tgt_position(-35, 10);
+            motor[2].tgt_position(-55, 15);
             motorStartTick[2] = HAL_GetTick();
             motorMoving[2]    = true;
             delay_ms(10);
@@ -566,9 +566,9 @@ void process_move_set_2(void) {
 void manual_set_1() {
     motor[0].tgt_position(0, 30);
     delay_ms(10);
-    motor[1].tgt_position(1, 10);
+    motor[1].tgt_position(3, 10);
     delay_ms(10);
-    motor[2].tgt_position(0, 20);
+    motor[2].tgt_position(-1, 20);
     delay_ms(10);
     // motor[3].tgt_position(20,10);
 }
@@ -611,19 +611,23 @@ int main(void) {
     while (1) {
         key = key_scan(0);
 
-        if (key == KEY0_PRES && move1_state == MS1_IDLE) {
-            displayMessage("Running Main Program");
-            wait_time[0] = 20*60; //[s] 
-            wait_time[1] = 30*60;
-            move1_state = MS1_STEP1;       // Trigger state machine step 1
-        }
-        if (key == KEY1_PRES && move2_state == MS1_IDLE) {
+        // if (key == KEY0_PRES && move1_state == MS1_IDLE) {
+        //     displayMessage("Running Main Program");
+        //     wait_time[0] = 20*60; //[s] 
+        //     wait_time[1] = 30*60;
+        //     move1_state = MS1_STEP1;       // Trigger state machine step 1
+        // }
+        if (key == KEY0_PRES && move2_state == MS2_IDLE) {
             // wait_time = {30, 60}; 
-            displayMessage("Running Program 2");
-            // manual_set_1();
+            displayMessage("Running Demo Program");
+            //manual_set_1();
             wait_time[0] = 20; //[s] 
             wait_time[1] = 20;
             move2_state = MS2_STEP1;       // Trigger state machine step 1
+        }
+        if (key == KEY1_PRES) {
+            displayMessage("Manual Control");
+            manual_set_1();
         }
         if (key == KEY2_PRES) {
             displayMessage("STOP");
