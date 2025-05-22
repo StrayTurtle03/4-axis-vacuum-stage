@@ -51,6 +51,12 @@ private:
     uint8_t redu_ratio;       // Reduction ratio of the motor gearbox
     uint8_t acc;              // Acceleration parameter for the motor
     uint16_t vel;             // Target velocity (raw value to be sent to motor)
+    uint8_t addr;             // Motor address
+    uint8_t set_dir;          // Set forward direction (0 or 1)
+    uint8_t dir;              // Current direction bit sent to the motor
+    uint8_t redu_ratio;       // Reduction ratio of the motor gearbox
+    uint8_t acc;              // Acceleration parameter for the motor
+    uint16_t vel;             // Target velocity (raw value to be sent to motor)
 
 public:
     int velocity;             // User-defined speed (RPM)
@@ -105,6 +111,7 @@ public:
     }
 
     // Sets the velocity and direction based on the input velocity value, without sending a command
+    // Sets the velocity and direction based on the input velocity value, without sending a command
     void set_velocity(int velocity_val) {
         velocity = velocity_val;
         if (velocity < 0) {
@@ -129,6 +136,7 @@ public:
         Emm_V5_Vel_Control(addr, dir, vel, acc, 0);
     }
 
+    // Returns the reduction ratio of the motor
     // Returns the reduction ratio of the motor
     uint8_t get_reduction_ratio() const { return redu_ratio; }
 
@@ -219,6 +227,7 @@ void Translate_received_data(uint8_t* rs485buf) {
     uint8_t motor_addr    = rs485buf[0];
     uint8_t function_code = rs485buf[1];
     Motor* pm;
+    Motor* pm;
     switch (motor_addr) {
         case 1: pm = &motor[0]; break;
         case 2: pm = &motor[1]; break;
@@ -229,6 +238,7 @@ void Translate_received_data(uint8_t* rs485buf) {
 
     switch (function_code) {
         case 0x35: // Velocity feedback
+        case 0x35: // Velocity feedback
             if (len >= 6) {
                 uint8_t sign = rs485buf[2];
                 uint16_t speed_raw = (rs485buf[3] << 8) | rs485buf[4];
@@ -236,9 +246,11 @@ void Translate_received_data(uint8_t* rs485buf) {
             }
             break;
         case 0x36: // Position feedback
+        case 0x36: // Position feedback
             if (len >= 8) {
                 uint8_t sign = rs485buf[2];
                 uint32_t pos = (rs485buf[3] << 24) | (rs485buf[4] << 16) |
+                               (rs485buf[5] << 8)  | rs485buf[6];
                                (rs485buf[5] << 8)  | rs485buf[6];
                 pm->read_position_raw = (sign == 0x01) ? -static_cast<int32_t>(pos) : pos;
                 uint8_t rr = pm->get_reduction_ratio();
@@ -255,6 +267,7 @@ void Translate_received_data(uint8_t* rs485buf) {
             break;
     }
 
+    // The four motors are arranged vertically, each refreshed individually
     // The four motors are arranged vertically, each refreshed individually
     int baseX = 30;
     for (uint8_t i = 0; i < 4; i++) {
