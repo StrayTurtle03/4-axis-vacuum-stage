@@ -206,7 +206,7 @@ I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_pcd_ex.h)(0x64ACAFAC)
 I (..\..\Drivers\STM32F4xx_HAL_Driver\Inc\stm32f4xx_hal_hcd.h)(0x64ACAFAC)
 I (D:\Program Files\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x6025237C)
 I (..\..\Drivers\./BSP/RS485/rs485.h)(0x64ACAFAC)
-F (..\..\User\main.cpp)(0x682DCD93)(--cpp -c --cpu Cortex-M4.fp.sp -g -O0 --apcs=interwork --split_sections -I ..\..\User -I ..\..\Drivers -I ..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I ..\..\Drivers\CMSIS\Include -I ..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I ..\..\Middlewares-I"D:\Program Files\Keil_v5\Packs\Keil\STM32F4xx_DFP\2.8.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include"-D__UVISION_VERSION="541" -DSTM32F407xx -DUSE_HAL_DRIVER -DSTM32F407xx-o ..\..\output\main.o --depend ..\..\output\main.d)
+F (..\..\User\main.cpp)(0x682EAEAA)(--cpp -c --cpu Cortex-M4.fp.sp -g -O0 --apcs=interwork --split_sections -I ..\..\User -I ..\..\Drivers -I ..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include -I ..\..\Drivers\CMSIS\Include -I ..\..\Drivers\STM32F4xx_HAL_Driver\Inc -I ..\..\Middlewares-I"D:\Program Files\Keil_v5\Packs\Keil\STM32F4xx_DFP\2.8.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include"-D__UVISION_VERSION="541" -DSTM32F407xx -DUSE_HAL_DRIVER -DSTM32F407xx-o ..\..\output\main.o --depend ..\..\output\main.d)
 I (..\..\User\./c_bindings.h)(0x6801FEDD)
 I (..\..\Drivers\./SYSTEM/sys/sys.h)(0x64ACAFAE)
 I (..\..\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h)(0x64ACAFAC)
@@ -2137,4 +2137,4 @@ I (..\..\Drivers\./SYSTEM/usart/usart.h)(0x67FE1ACB)
 I (D:\Program Files\Keil_v5\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (D:\Program Files\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x6025237C)
 I (..\..\Middlewares\./USMART/usmart_str.h)(0x64ACAFAE)
-F (..\..\readme.txt)(0x64ACAFAE)()
+F (..\..\readme.txt)(0x00000000)()

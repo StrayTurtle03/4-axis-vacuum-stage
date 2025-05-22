@@ -13,7 +13,19 @@ enum MoveState1 {
     MS1_DONE     // Done, can be reset
 };
 
+enum MoveState2 {
+    MS2_IDLE = 0,
+    MS2_STEP1,   // Initial move
+    MS2_WAIT1,   // Wait for 30s
+    MS2_STEP2,   // Accelerate
+    MS2_WAIT2,   // Wait for 60s
+    MS2_STEP3,   // Decelerate and return to initial
+    MS2_WAIT3,   // Wait for the motors to stop
+    MS2_DONE     // Done, can be reset
+};
+
 static MoveState1 move1_state = MS1_IDLE;
+static MoveState2 move2_state = MS2_IDLE;
 static uint32_t move1_lastTick = 0;
 
 const char* MoveState1Names[] = {
@@ -45,12 +57,6 @@ void displayMessage(const char* msg) {
 
 class Motor {
 private:
-    uint8_t addr;             // Motor address
-    uint8_t set_dir;          // Set forward direction (0 or 1)
-    uint8_t dir;              // Current direction bit sent to the motor
-    uint8_t redu_ratio;       // Reduction ratio of the motor gearbox
-    uint8_t acc;              // Acceleration parameter for the motor
-    uint16_t vel;             // Target velocity (raw value to be sent to motor)
     uint8_t addr;             // Motor address
     uint8_t set_dir;          // Set forward direction (0 or 1)
     uint8_t dir;              // Current direction bit sent to the motor
@@ -202,7 +208,6 @@ Motor motor[5];
 
 // Track the status for four motors
 static uint32_t motorStartTick[4]   = {0, 0, 0, 0};  // Each motor's movement start tick (HAL_GetTick())
-static uint32_t motorDuration[4]    = {0, 0, 0, 0};  // Estimated movement duration (ms) for each motor
 static bool     motorMoving[4]      = {false, false, false, false}; // Indicates if the motor is in motion
 int wait_time[5] = {0,0,0,0,0}; //[s] // Wait time for each motor
 
@@ -227,7 +232,6 @@ void Translate_received_data(uint8_t* rs485buf) {
     uint8_t motor_addr    = rs485buf[0];
     uint8_t function_code = rs485buf[1];
     Motor* pm;
-    Motor* pm;
     switch (motor_addr) {
         case 1: pm = &motor[0]; break;
         case 2: pm = &motor[1]; break;
@@ -238,7 +242,6 @@ void Translate_received_data(uint8_t* rs485buf) {
 
     switch (function_code) {
         case 0x35: // Velocity feedback
-        case 0x35: // Velocity feedback
             if (len >= 6) {
                 uint8_t sign = rs485buf[2];
                 uint16_t speed_raw = (rs485buf[3] << 8) | rs485buf[4];
@@ -246,11 +249,9 @@ void Translate_received_data(uint8_t* rs485buf) {
             }
             break;
         case 0x36: // Position feedback
-        case 0x36: // Position feedback
             if (len >= 8) {
                 uint8_t sign = rs485buf[2];
                 uint32_t pos = (rs485buf[3] << 24) | (rs485buf[4] << 16) |
-                               (rs485buf[5] << 8)  | rs485buf[6];
                                (rs485buf[5] << 8)  | rs485buf[6];
                 pm->read_position_raw = (sign == 0x01) ? -static_cast<int32_t>(pos) : pos;
                 uint8_t rr = pm->get_reduction_ratio();
@@ -267,7 +268,6 @@ void Translate_received_data(uint8_t* rs485buf) {
             break;
     }
 
-    // The four motors are arranged vertically, each refreshed individually
     // The four motors are arranged vertically, each refreshed individually
     int baseX = 30;
     for (uint8_t i = 0; i < 4; i++) {
@@ -420,8 +420,150 @@ void process_move_set_1(void) {
     }
 }
 
-// --- The original move_set_2 can remain unchanged --- 
-void move_set_2() {
+void process_move_set_2(void) {
+    uint32_t now = HAL_GetTick();
+    switch (move1_state) {
+        case MS2_IDLE:
+            // Idle - waiting for trigger
+            break;
+
+        case MS2_STEP1:
+            // Step 1: All four motors act simultaneously
+            motor[0].tgt_position(18, 50); //[degree]
+            motorStartTick[0] = HAL_GetTick();
+            motorMoving[0]    = true;
+            delay_ms(10);
+            motor[1].tgt_position(30, 40); //[mm]
+            motorStartTick[1] = HAL_GetTick();
+            motorMoving[1]    = true;
+            delay_ms(10);
+            motor[2].tgt_position(5, 15); //[degree]
+            motorStartTick[2] = HAL_GetTick();
+            motorMoving[2]    = true;
+            delay_ms(10);
+            motor[3].constant_rorate(50);
+            delay_ms(10);
+            for(int i = 0; i < 4; i++) {
+                motor[i].status = "RUN";
+            }
+
+            for(int i = 0; i < 3; i++) 
+                if(motor[i].duration > wait_time[0]*1000) {
+                    wait_time[0] = motor[i].duration/1000;
+                }
+
+            move1_lastTick = now;
+            move2_state = MS2_WAIT1;
+            break;
+
+        case MS2_WAIT1:
+            // Wait for 30 seconds (30000 ms)
+            for(int i = 0; i < 3; i++) {
+                if (now - motorStartTick[i] >= motor[i].duration) {
+                    motor[i].status = "STOP";
+                    motor[i].duration = 0;
+                }    
+            }
+            if (now - move1_lastTick >= wait_time[0]*1000) {
+                move2_state = MS2_STEP2;
+            }
+            break;
+
+        case MS2_STEP2:
+            // Step 2: Raise the platform
+            motor[0].tgt_position(-5, 10);
+            motorStartTick[0] = HAL_GetTick();
+            motorMoving[0]    = true;
+            delay_ms(10);
+            motor[1].tgt_position(-20, 5);
+            motorStartTick[1] = HAL_GetTick();
+            motorMoving[1]    = true;
+            delay_ms(10);
+            motor[2].tgt_position(30, 10);
+            motorStartTick[2] = HAL_GetTick();
+            motorMoving[2]    = true;
+            delay_ms(10);
+            for(int i = 0; i < 4; i++) {
+                motor[i].status = "RUN";
+            }
+            for(int i = 0; i < 3; i++) 
+                if(motor[i].duration > wait_time[1]*1000) {
+                    wait_time[1] = motor[i].duration/1000;
+                }
+
+            move1_lastTick = now;
+            move2_state = MS2_WAIT2;
+            break;
+
+        case MS2_WAIT2:
+            // Wait another 60 seconds (60000 ms)
+            for(int i = 0; i < 3; i++) {
+                if (now - motorStartTick[i] >= motor[i].duration) {
+                    motor[i].status = "STOP";
+                    motor[i].duration = 0;
+                }    
+            }
+            if (now - move1_lastTick >= wait_time[1]*1000) {
+                move2_state = MS2_STEP3;
+            }
+
+            break;
+
+        case MS2_STEP3:
+            // Step 3: Return to home
+            motor[0].tgt_position(-13, 50);
+            motorStartTick[0] = HAL_GetTick();
+            motorMoving[0]    = true;
+            delay_ms(10);
+            motor[1].tgt_position(-10, 15);
+            motorStartTick[1] = HAL_GetTick();
+            motorMoving[1]    = true;
+            delay_ms(10);
+            motor[2].tgt_position(-35, 10);
+            motorStartTick[2] = HAL_GetTick();
+            motorMoving[2]    = true;
+            delay_ms(10);
+            motor[3].constant_rorate(0);
+            delay_ms(10);
+			for(int i = 0; i < 3; i++) {
+                motor[i].status = "RUN";
+            }
+            
+            move1_lastTick = now;
+            wait_time[2] = 0; // Reset wait time for the next step
+            for(int i = 0; i < 3; i++) 
+                if(motor[i].duration > wait_time[2]*1000) {
+                    wait_time[2] = motor[i].duration/1000;
+                }
+            wait_time[2] += 5; // Add a 5-second buffer to the wait time
+            motor[3].status = "STOP";
+            move2_state = MS2_WAIT3;
+            break;
+
+        case MS2_WAIT3:
+            // Wait for the motors to stop
+            for(int i = 0; i < 3; i++) {
+                if (now - motorStartTick[i] >= motor[i].duration) {
+                    motor[i].status = "STOP";
+                    motor[i].duration = 0;
+                }    
+            }
+            if (now - move1_lastTick >= wait_time[2]*1000) {
+                move2_state = MS2_DONE;
+            }
+            break;
+
+        case MS2_DONE:
+            // After completion, either automatically return to IDLE or remain DONE until Key0 re-triggers
+            for(int i = 0; i < 4; i++) {
+                motor[i].status = "STOP";
+            }
+            move2_state = MS2_IDLE;
+            break;
+    }
+}
+
+void manual_set_1() {
     motor[0].tgt_position(0, 30);
     delay_ms(10);
     motor[1].tgt_position(1, 10);
@@ -475,10 +617,13 @@ int main(void) {
             wait_time[1] = 30*60;
             move1_state = MS1_STEP1;       // Trigger state machine step 1
         }
-        if (key == KEY1_PRES && move1_state == MS1_IDLE) {
+        if (key == KEY1_PRES && move2_state == MS1_IDLE) {
             // wait_time = {30, 60}; 
             displayMessage("Running Program 2");
-            move_set_2();
+            // manual_set_1();
+            wait_time[0] = 20; //[s] 
+            wait_time[1] = 20;
+            move2_state = MS2_STEP1;       // Trigger state machine step 1
         }
         if (key == KEY2_PRES) {
             displayMessage("STOP");
@@ -492,16 +637,23 @@ int main(void) {
             motor[3].tgt_position(0, 0);
         
             move1_state = MS1_IDLE;  // Interrupt state machine
+            move2_state = MS2_IDLE;  // Interrupt state machine
         }
 
         process_move_set_1();          // Drive the state machine (non-blocking)
+        process_move_set_2(); 
         // pollMotorStops();              // Auto-stop check for motors
 
         // Assume the maximum status name length of 6 characters, such as "WAIT2" or "STEP1"
         // Format it to fixed length 6 with a prefix; this ensures that if the status is "IDLE" (4 characters),
         // two trailing spaces are added to maintain consistent display width
         char stateBuf[16];
-        snprintf(stateBuf, sizeof(stateBuf), "MS1:%-6s", MoveState1Names[(int)move1_state]);
+        if(move1_state == MS1_IDLE && move2_state != MS2_IDLE) {
+            snprintf(stateBuf, sizeof(stateBuf), "MS2:%-6s", MoveState1Names[(int)move2_state]);
+        } else {
+            snprintf(stateBuf, sizeof(stateBuf), "MS1:%-6s", MoveState1Names[(int)move1_state]);
+        }
+        //snprintf(stateBuf, sizeof(stateBuf), "MS1:%-6s", MoveState1Names[(int)move1_state]);
         lcd_show_string(10, 10, 200, 16, 16, stateBuf, BLUE);
 
         // Periodically read RS485 and update the display
