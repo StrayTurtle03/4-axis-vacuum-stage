@@ -80,3 +80,4 @@
 ..\..\output\main.o: ..\..\Drivers\./BSP/KEY/key.h
 ..\..\output\main.o: ..\..\Drivers\./BSP/RS485/rs485.h
 ..\..\output\main.o: ..\..\User\./Emm.h
+..\..\output\main.o: D:\Program Files\Keil_v5\ARM\ARMCC\Bin\..\include\math.h
